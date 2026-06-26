@@ -160,31 +160,20 @@ def scrape_url(url):
         return None, f"Error scraping URL: {str(e)}"
 
 def extract_text_from_image(image_file):
-    """Extract text from screenshot using OCR"""
+    """Extract text from screenshot using easyocr — works on cloud"""
     try:
+        import easyocr
+        import numpy as np
         image = Image.open(image_file)
-        
-        # Try to set tesseract path for Windows
-        if os.name == 'nt':  # Windows
-            tesseract_paths = [
-                r'C:\Program Files\Tesseract-OCR\tesseract.exe',
-                r'C:\Program Files (x86)\Tesseract-OCR\tesseract.exe',
-            ]
-            for path in tesseract_paths:
-                if os.path.exists(path):
-                    pytesseract.pytesseract.tesseract_cmd = path
-                    break
-
-        text = pytesseract.image_to_string(image, lang='eng')
+        img_array = np.array(image)
+        reader = easyocr.Reader(['en'], gpu=False)
+        results = reader.readtext(img_array)
+        text = ' '.join([r[1] for r in results])
         text = text.strip()
-
         if len(text) < 20:
-            return None, "Could not read text from this image. Make sure the screenshot is clear and contains readable text."
+            return None, "Could not read text from this image. Make sure the screenshot is clear."
         return text, None
-
     except Exception as e:
-        if 'tesseract' in str(e).lower():
-            return None, "Tesseract not found. Please install it from github.com/UB-Mannheim/tesseract/wiki"
         return None, f"Error reading image: {str(e)}"
 
 def detect_ai_content(text):
